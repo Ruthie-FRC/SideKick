@@ -108,8 +108,17 @@ dependencies {
                     implementation "${dep.groupId}:${dep.artifactId}:${dep.version}"
                 }
             }
+            // Support annotation processors for all vendordeps (including AdvantageKit)
             if (json.annotationProcessors) {
                 json.annotationProcessors.each { dep ->
+                    annotationProcessor "${dep.groupId}:${dep.artifactId}:${dep.version}"
+                }
+            }
+            // Also support akit-autolog for vendordeps that specify it as a javaDependency
+            if (json.javaDependencies) {
+                json.javaDependencies.findAll { dep ->
+                    dep.artifactId?.toLowerCase()?.contains('akit-autolog')
+                }.each { dep ->
                     annotationProcessor "${dep.groupId}:${dep.artifactId}:${dep.version}"
                 }
             }
