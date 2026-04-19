@@ -31,5 +31,12 @@
       ]
     }
   ],
-  "cppDependencies": []
+  "cppDependencies": [],
+  "annotationProcessors": [
+    {
+      "groupId": "org.littletonrobotics.akit",
+      "artifactId": "akit-autolog",
+      "version": "26.0.2"
+    }
+  ]
 }
