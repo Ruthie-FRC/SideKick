@@ -94,8 +94,27 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
-    annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
+    // Auto-load all vendordep JSONs for dependencies
+    def vendordepDir = new File(projectDir, "vendordeps")
+    if (vendordepDir.exists()) {
+        vendordepDir.listFiles(new FilenameFilter() {
+            boolean accept(File dir, String name) {
+                return name.endsWith(".json")
+            }
+        }).each { File jsonFile ->
+            def json = new groovy.json.JsonSlurper().parseText(jsonFile.text)
+            if (json.javaDependencies) {
+                json.javaDependencies.each { dep ->
+                    implementation "${dep.groupId}:${dep.artifactId}:${dep.version}"
+                }
+            }
+            if (json.annotationProcessors) {
+                json.annotationProcessors.each { dep ->
+                    annotationProcessor "${dep.groupId}:${dep.artifactId}:${dep.version}"
+                }
+            }
+        }
+    }
 }
 
 test {

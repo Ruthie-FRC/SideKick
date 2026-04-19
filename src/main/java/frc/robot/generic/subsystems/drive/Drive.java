@@ -73,6 +73,10 @@ public class Drive extends SubsystemBase {
   private SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
 
+  // JSim physics integration (simulation only)
+  private jsim.PhysicsWorld jsimWorld = null;
+  private jsim.PhysicsBody jsimRobotBody = null;
+
   public Drive(
       GyroIO gyroIO,
       ModuleIO flModuleIO,
@@ -125,6 +129,13 @@ public class Drive extends SubsystemBase {
                 (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
     new Trigger(DriverStation::isDisabled)
         .onTrue(runOnce(this::resetToAbsolute).ignoringDisable(true));
+
+    // JSim physics: initialize in simulation mode
+    if (Constants.currentMode == Mode.SIM) {
+      jsimWorld = new jsim.PhysicsWorld(0.02, false); // 20ms timestep, no gravity for flat field
+      jsimRobotBody = jsimWorld.createBody(50.0); // Example: 50kg robot
+      jsimRobotBody.setPosition(new jsim.Vec3(0.0, 0.0, 0.0));
+    }
   }
 
   @Override
@@ -188,6 +199,14 @@ public class Drive extends SubsystemBase {
     Logger.recordOutput("Odometry/Robot", getPose());
     RobotState.getInstance().setRobotPosition(getPose());
     RobotState.getInstance().setRobotRelativeVelocity(getChassisSpeeds());
+
+    // JSim physics: update simulated robot position in simulation mode
+    if (Constants.currentMode == Mode.SIM && jsimWorld != null && jsimRobotBody != null) {
+      // Example: set simulated position to match estimated pose (X, Y, 0)
+      Pose2d pose = poseEstimator.getEstimatedPosition();
+      jsimRobotBody.setPosition(new jsim.Vec3(pose.getX(), pose.getY(), 0.0));
+      // Optionally, set velocity or other properties as needed
+    }
   }
 
   /**
